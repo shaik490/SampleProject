@@ -14,6 +14,9 @@ import org.openqa.selenium.support.events.EventFiringWebDriver;
 
 import com.beta.qa.util.TestUtil;
 
+
+//Need to provide Absolute paths for cloud integration
+
 public class TestBase {
 
 	public static WebDriver driver;

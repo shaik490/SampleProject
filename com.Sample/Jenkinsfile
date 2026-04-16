@@ -1,0 +1,64 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'BUILD_ENV', choices: ['dev', 'qa', 'prod'], description: 'Select environment')
+        booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Skip unit tests')
+        string(name: 'VERSION', defaultValue: '1.0-SNAPSHOT', description: 'Build version')
+    }
+
+    environment {
+        MAVEN_OPTS = '-Xmx1024m'
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git url: 'https://github.com/shaik490/SampleProject.git', branch: 'main'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    if (params.SKIP_TESTS) {
+                        sh "mvn clean package -DskipTests -Drevision=${params.VERSION}"
+                    } else {
+                        sh "mvn clean package -Drevision=${params.VERSION}"
+                    }
+                }
+            }
+        }
+
+        stage('Test Results') {
+            when {
+                expression { return !params.SKIP_TESTS }
+            }
+            steps {
+                junit '**/target/surefire-reports/*.xml'
+            }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
+
+        stage('Deploy (Mock)') {
+            steps {
+                echo "Deploying to ${params.BUILD_ENV} environment"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build SUCCESS'
+        }
+        failure {
+            echo 'Build FAILED'
+        }
+    }
+}
